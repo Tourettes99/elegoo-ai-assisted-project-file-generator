@@ -1,0 +1,22 @@
+# Core dependencies for 3D AI Slicer Profile Generator
+google-generativeai>=0.3.0
+trimesh>=4.0.0
+numpy>=1.24.0
+gradio>=4.0.0
+python-dotenv>=1.0.0
+
+# 3D processing and visualization
+meshio>=5.3.0
+numpy-stl>=3.0.0
+pyvista>=0.43.0
+lxml>=4.9.0
+
+# Vector database and memory
+chromadb>=0.4.0
+sentence-transformers>=2.2.0
+
+# Utilities
+Pillow>=10.0.0
+requests>=2.31.0
+tqdm>=4.66.0
+

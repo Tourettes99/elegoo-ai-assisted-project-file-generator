@@ -1,0 +1,72 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+ENV/
+env/
+
+# Environment variables
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Project specific - User data and generated files
+knowledge_base/
+generated_profiles/
+chroma_db/
+models_cache/
+*.stl
+*.obj
+*.3mf
+*.ply
+
+# Template files with user settings (don't share)
+elegoo_default_settings.json
+
+# Exports
+knowledge_export.json
+*.log
+
+# Test and debug files
+test_*.py
+debug_*.py
+compare_*.py
+check_*.py
+verify_*.py
+extract_*.py
+deep_compare.py
+quick_*.py
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Gradio
+gradio_cached_examples/
+flagged/
+

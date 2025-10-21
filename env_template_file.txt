@@ -1,0 +1,20 @@
+# Google Gemini API Configuration
+# Get your FREE API key from: https://makersuite.google.com/app/apikey
+GOOGLE_API_KEY=your_google_gemini_api_key_here
+
+# Optional: Path to Elegoo Orca Slicer executable
+# Windows example:
+ORCA_SLICER_PATH=C:\Program Files\OrcaSlicer\orca-slicer.exe
+
+# Instructions:
+# 1. Copy this file and rename it to '.env' (note the dot at the beginning)
+# 2. Replace 'your_google_gemini_api_key_here' with your actual API key from Google
+# 3. Update ORCA_SLICER_PATH if Elegoo Orca Slicer is installed elsewhere
+# 4. NEVER commit the .env file to GitHub (it's in .gitignore)
+
+# Get API Key:
+# 1. Visit https://makersuite.google.com/app/apikey
+# 2. Sign in with Google account
+# 3. Click "Create API Key"
+# 4. Copy and paste here
+
