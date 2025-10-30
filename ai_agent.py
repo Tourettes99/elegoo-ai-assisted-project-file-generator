@@ -66,10 +66,23 @@ class AI3DPrintAgent:
         """
         
         print(f"📂 Loading model: {os.path.basename(model_path)}")
+        print(f"   Full path: {os.path.abspath(model_path)}")
+        print(f"   File exists: {os.path.exists(model_path)}")
+        if os.path.exists(model_path):
+            print(f"   File size: {os.path.getsize(model_path)} bytes")
         
         # Step 1: Extract features from the 3D model
         print("🔍 Extracting geometric features...")
-        features = self.feature_extractor.extract_from_file(model_path)
+        try:
+            features = self.feature_extractor.extract_from_file(model_path)
+            print("✓ Feature extraction complete")
+        except Exception as e:
+            print(f"❌ FEATURE EXTRACTION ERROR:")
+            print(f"   Error type: {type(e).__name__}")
+            print(f"   Error message: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            raise
         
         # Generate feature summary
         feature_summary = self.feature_extractor.generate_summary(features)

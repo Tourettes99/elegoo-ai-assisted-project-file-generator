@@ -43,40 +43,83 @@ class ProfileGenerator:
             Dictionary with paths to generated files
         """
         
-        profile_data = analysis.get("profile", {})
+        print(f"\n{'='*70}")
+        print(f"PROFILE GENERATION START")
+        print(f"{'='*70}")
+        print(f"   Model: {model_name}")
+        print(f"   Material: {material}")
+        print(f"   Slicer: {slicer_type}")
+        print(f"   Build plate: {build_plate_size}mm")
         
-        # Generate timestamp-based filename
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        safe_name = self._sanitize_filename(model_name)
-        base_filename = f"{safe_name}_{timestamp}"
-        
-        # Generate 3MF project file with embedded settings (primary format)
-        three_mf_path = None
-        if model_path and os.path.exists(model_path):
-            three_mf_path = self._generate_3mf_with_settings(
-                model_path, profile_data, analysis, base_filename, material, slicer_type, build_plate_size
-            )
-        
-        # Generate JSON config with slicer-specific format
-        json_config_path = self._generate_json_config(profile_data, analysis, base_filename, material, slicer_type)
-        
-        # Generate JSON for reference
-        json_path = self._generate_json_profile(profile_data, analysis, base_filename, material)
-        
-        # Generate human-readable summary
-        summary_path = self._generate_summary(analysis, base_filename)
-        
-        result = {
-            "json_config": json_config_path,
-            "json_profile": json_path,
-            "summary": summary_path,
-            "base_name": base_filename
-        }
-        
-        if three_mf_path:
-            result["3mf_profile"] = three_mf_path
-        
-        return result
+        try:
+            profile_data = analysis.get("profile", {})
+            
+            # Generate timestamp-based filename
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            safe_name = self._sanitize_filename(model_name)
+            base_filename = f"{safe_name}_{timestamp}"
+            print(f"   Base filename: {base_filename}")
+            
+            # Generate 3MF project file with embedded settings (primary format)
+            three_mf_path = None
+            if model_path and os.path.exists(model_path):
+                print(f"\n   🔍 Generating 3MF project file...")
+                try:
+                    three_mf_path = self._generate_3mf_with_settings(
+                        model_path, profile_data, analysis, base_filename, material, slicer_type, build_plate_size
+                    )
+                    print(f"   ✓ 3MF generation complete")
+                except Exception as e:
+                    print(f"   ❌ 3MF GENERATION FAILED:")
+                    print(f"      Error: {e}")
+                    import traceback
+                    traceback.print_exc()
+                    # Continue without 3MF
+            else:
+                if not model_path:
+                    print(f"   ⚠️  No model path provided - skipping 3MF generation")
+                elif not os.path.exists(model_path):
+                    print(f"   ⚠️  Model file not found: {model_path}")
+            
+            # Generate JSON config with slicer-specific format
+            print(f"\n   🔍 Generating JSON config...")
+            json_config_path = self._generate_json_config(profile_data, analysis, base_filename, material, slicer_type)
+            
+            # Generate JSON for reference
+            print(f"\n   🔍 Generating JSON profile...")
+            json_path = self._generate_json_profile(profile_data, analysis, base_filename, material)
+            
+            # Generate human-readable summary
+            print(f"\n   🔍 Generating summary...")
+            summary_path = self._generate_summary(analysis, base_filename)
+            
+            result = {
+                "json_config": json_config_path,
+                "json_profile": json_path,
+                "summary": summary_path,
+                "base_name": base_filename
+            }
+            
+            if three_mf_path:
+                result["3mf_profile"] = three_mf_path
+            
+            print(f"\n{'='*70}")
+            print(f"PROFILE GENERATION COMPLETE")
+            print(f"{'='*70}\n")
+            
+            return result
+            
+        except Exception as e:
+            print(f"\n{'='*70}")
+            print(f"❌ PROFILE GENERATION FAILED")
+            print(f"{'='*70}")
+            print(f"Error type: {type(e).__name__}")
+            print(f"Error message: {str(e)}")
+            import traceback
+            print(f"Full traceback:")
+            traceback.print_exc()
+            print(f"{'='*70}\n")
+            raise
     
     def _sanitize_filename(self, name: str) -> str:
         """Sanitize filename"""
@@ -180,12 +223,35 @@ class ProfileGenerator:
             os.makedirs(temp_dir, exist_ok=True)
             
             # Load and convert model to STL for 3MF
-            mesh = trimesh.load(model_path, force='mesh')
-            if isinstance(mesh, trimesh.Scene):
-                mesh = trimesh.util.concatenate([
-                    geom for geom in mesh.geometry.values()
-                    if isinstance(geom, trimesh.Trimesh)
-                ])
+            print(f"   🔍 Loading 3D model from: {model_path}")
+            print(f"      File exists: {os.path.exists(model_path)}")
+            print(f"      File size: {os.path.getsize(model_path) if os.path.exists(model_path) else 'N/A'} bytes")
+            
+            try:
+                mesh = trimesh.load(model_path, force='mesh')
+                print(f"   ✓ Model loaded successfully")
+                print(f"      Type: {type(mesh)}")
+                
+                if isinstance(mesh, trimesh.Scene):
+                    print(f"      Processing scene with {len(mesh.geometry)} geometries")
+                    mesh = trimesh.util.concatenate([
+                        geom for geom in mesh.geometry.values()
+                        if isinstance(geom, trimesh.Trimesh)
+                    ])
+                    print(f"   ✓ Scene converted to single mesh")
+                    
+                print(f"      Vertices: {len(mesh.vertices)}")
+                print(f"      Faces: {len(mesh.faces)}")
+                print(f"      Bounds: {mesh.bounds}")
+            except Exception as e:
+                print(f"   ❌ MODEL LOADING ERROR:")
+                print(f"      File: {os.path.abspath(model_path)}")
+                print(f"      Error type: {type(e).__name__}")
+                print(f"      Error message: {str(e)}")
+                import traceback
+                print(f"      Traceback:")
+                traceback.print_exc()
+                raise
             
             # Generate proper 3MF model XML with auto-positioning
             model_3d_dir = os.path.join(temp_dir, "3D")
@@ -193,8 +259,17 @@ class ProfileGenerator:
             
             # Create 3D model XML with mesh data and transform
             print(f"   📐 Build plate: {build_plate_size}mm - calculating optimal placement...")
-            model_xml, transform_matrix = self._generate_3mf_model_xml(mesh, build_plate_size=build_plate_size)
-            print(f"   ✓ Transform: {transform_matrix[:50]}...")
+            try:
+                model_xml, transform_matrix = self._generate_3mf_model_xml(mesh, build_plate_size=build_plate_size)
+                print(f"   ✓ Transform: {transform_matrix[:50]}...")
+                print(f"   ✓ Generated 3MF model XML ({len(model_xml)} characters)")
+            except Exception as e:
+                print(f"   ❌ 3MF XML GENERATION ERROR:")
+                print(f"      Error type: {type(e).__name__}")
+                print(f"      Error message: {str(e)}")
+                import traceback
+                traceback.print_exc()
+                raise
             
             # For Elegoo, create both main model and Objects subfolder
             if slicer_type == "elegoo_orca":
@@ -259,9 +334,20 @@ class ProfileGenerator:
                 center_z = (mesh.bounds[1][2] - mesh.bounds[0][2]) / 2  # Model height center
                 
                 # Create project_settings.config (main config file for Elegoo)
-                project_settings = self._generate_elegoo_project_settings(profile, analysis, material)
-                with open(os.path.join(metadata_dir, "project_settings.config"), 'w', encoding='utf-8') as f:
-                    json.dump(project_settings, f, indent=2)
+                try:
+                    print(f"   🔍 Generating project_settings.config...")
+                    project_settings = self._generate_elegoo_project_settings(profile, analysis, material)
+                    settings_path = os.path.join(metadata_dir, "project_settings.config")
+                    with open(settings_path, 'w', encoding='utf-8') as f:
+                        json.dump(project_settings, f, indent=2)
+                    print(f"   ✓ project_settings.config written ({os.path.getsize(settings_path)} bytes)")
+                except Exception as e:
+                    print(f"   ❌ PROJECT SETTINGS ERROR:")
+                    print(f"      Error type: {type(e).__name__}")
+                    print(f"      Error message: {str(e)}")
+                    import traceback
+                    traceback.print_exc()
+                    raise
                 
                 # Create model_settings.config (XML with positioning!)
                 # CRITICAL: source_offset should be 0,0,Z - transform handles positioning!
@@ -342,6 +428,8 @@ class ProfileGenerator:
             
             # For standard Orca Slicer (PrusaSlicer based)
             else:
+                config_json = self._generate_3mf_config_json(profile, analysis, material, slicer_type)
+                
                 with open(os.path.join(metadata_dir, "Slic3r_PE.json"), 'w', encoding='utf-8') as f:
                     json.dump(config_json, f, indent=2)
                 
@@ -352,19 +440,39 @@ class ProfileGenerator:
                     json.dump(config_json, f, indent=2)
             
             # Create the 3MF file (it's a ZIP archive)
-            with zipfile.ZipFile(output_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                for root, dirs, files in os.walk(temp_dir):
-                    for file in files:
-                        file_path = os.path.join(root, file)
-                        arcname = os.path.relpath(file_path, temp_dir)
-                        zipf.write(file_path, arcname)
+            print(f"   🔍 Creating 3MF ZIP archive...")
+            try:
+                file_count = 0
+                with zipfile.ZipFile(output_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                    for root, dirs, files in os.walk(temp_dir):
+                        for file in files:
+                            file_path = os.path.join(root, file)
+                            arcname = os.path.relpath(file_path, temp_dir)
+                            zipf.write(file_path, arcname)
+                            file_count += 1
+                print(f"   ✓ 3MF archive created successfully ({file_count} files, {os.path.getsize(output_path)} bytes)")
+                print(f"   ✓ 3MF file: {os.path.abspath(output_path)}")
+            except Exception as e:
+                print(f"   ❌ 3MF ZIP CREATION ERROR:")
+                print(f"      Output path: {os.path.abspath(output_path)}")
+                print(f"      Error type: {type(e).__name__}")
+                print(f"      Error message: {str(e)}")
+                import traceback
+                traceback.print_exc()
+                raise
             
             return output_path
             
         finally:
             # Clean up temp directory
-            if os.path.exists(temp_dir):
-                shutil.rmtree(temp_dir)
+            try:
+                if os.path.exists(temp_dir):
+                    print(f"   🔍 Cleaning up temp directory: {temp_dir}")
+                    shutil.rmtree(temp_dir)
+                    print(f"   ✓ Temp directory cleaned up")
+            except Exception as e:
+                print(f"   ⚠️  Cleanup warning: {e}")
+                # Don't raise - cleanup errors are not critical
     
     def _generate_orca_config(self, profile: Dict[str, Any], analysis: Dict[str, Any], material: str, slicer_type: str = "elegoo_orca") -> str:
         """Generate slicer configuration embedded in 3MF for specific slicer type"""
@@ -652,9 +760,30 @@ class ProfileGenerator:
         """Load default Elegoo settings template"""
         template_path = os.path.join(os.path.dirname(__file__), "elegoo_default_settings.json")
         
+        print(f"   🔍 Loading Elegoo defaults from: {template_path}")
+        
         if os.path.exists(template_path):
-            with open(template_path, 'r') as f:
-                return json.load(f)
+            try:
+                with open(template_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    print(f"   ✓ Successfully loaded {len(data)} default settings")
+                    return data
+            except json.JSONDecodeError as e:
+                print(f"   ❌ JSON PARSE ERROR in elegoo_default_settings.json:")
+                print(f"      Line {e.lineno}, Column {e.colno}: {e.msg}")
+                print(f"      Error at position {e.pos}")
+                print(f"      Full path: {os.path.abspath(template_path)}")
+                import traceback
+                traceback.print_exc()
+                return {}
+            except Exception as e:
+                print(f"   ❌ ERROR loading elegoo_default_settings.json: {e}")
+                import traceback
+                traceback.print_exc()
+                return {}
+        else:
+            print(f"   ⚠️  Template not found at: {os.path.abspath(template_path)}")
+            print(f"      Using minimal fallback settings")
         
         # Minimal fallback if template not found
         return {}
@@ -778,18 +907,34 @@ class ProfileGenerator:
     def _generate_json_config(self, profile: Dict[str, Any], analysis: Dict[str, Any], base_filename: str, material: str, slicer_type: str = "elegoo_orca") -> str:
         """Generate standalone JSON config file for manual import"""
         
-        # For Elegoo, use the full project settings format
-        if slicer_type == "elegoo_orca":
-            config = self._generate_elegoo_project_settings(profile, analysis, material)
-        else:
-            config = self._generate_3mf_config_json(profile, analysis, material, slicer_type)
-        
-        # Save to file
-        output_path = os.path.join(self.output_dir, f"{base_filename}_config.json")
-        with open(output_path, 'w', encoding='utf-8') as f:
-            json.dump(config, f, indent=2)
-        
-        return output_path
+        try:
+            # For Elegoo, use the full project settings format
+            if slicer_type == "elegoo_orca":
+                print(f"   🔍 Generating Elegoo project settings...")
+                config = self._generate_elegoo_project_settings(profile, analysis, material)
+                print(f"   ✓ Generated {len(config)} config parameters")
+            else:
+                print(f"   🔍 Generating standard Orca config...")
+                config = self._generate_3mf_config_json(profile, analysis, material, slicer_type)
+            
+            # Save to file
+            output_path = os.path.join(self.output_dir, f"{base_filename}_config.json")
+            print(f"   🔍 Writing JSON config to: {output_path}")
+            
+            with open(output_path, 'w', encoding='utf-8') as f:
+                json.dump(config, f, indent=2)
+            
+            print(f"   ✓ JSON config written successfully ({os.path.getsize(output_path)} bytes)")
+            return output_path
+            
+        except Exception as e:
+            print(f"   ❌ JSON CONFIG GENERATION ERROR:")
+            print(f"      Error type: {type(e).__name__}")
+            print(f"      Error message: {str(e)}")
+            import traceback
+            print(f"      Traceback:")
+            traceback.print_exc()
+            raise
     
     def _generate_ini_profile(self, 
                               profile: Dict[str, Any], 

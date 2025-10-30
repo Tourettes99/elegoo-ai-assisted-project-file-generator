@@ -6,6 +6,7 @@ import trimesh
 import numpy as np
 from typing import Dict, Any, List
 import hashlib
+import os
 
 
 class FeatureExtractor:
@@ -16,16 +17,42 @@ class FeatureExtractor:
     
     def load_model(self, file_path: str) -> trimesh.Trimesh:
         """Load a 3D model from file"""
+        print(f"   🔍 FeatureExtractor loading model: {file_path}")
+        print(f"      File exists: {os.path.exists(file_path)}")
+        if os.path.exists(file_path):
+            print(f"      File size: {os.path.getsize(file_path)} bytes")
+            print(f"      File extension: {os.path.splitext(file_path)[1]}")
+        
         try:
             mesh = trimesh.load(file_path, force='mesh')
+            print(f"   ✓ Model loaded by trimesh")
+            print(f"      Type: {type(mesh)}")
+            
             if isinstance(mesh, trimesh.Scene):
+                print(f"      Scene detected with {len(mesh.geometry)} geometries")
                 # If it's a scene, combine all geometries
-                mesh = trimesh.util.concatenate([
+                geometries = [
                     geom for geom in mesh.geometry.values()
                     if isinstance(geom, trimesh.Trimesh)
-                ])
+                ]
+                print(f"      Combining {len(geometries)} mesh geometries")
+                mesh = trimesh.util.concatenate(geometries)
+                print(f"   ✓ Scene combined into single mesh")
+            
+            print(f"      Vertices: {len(mesh.vertices)}")
+            print(f"      Faces: {len(mesh.faces)}")
+            print(f"      Volume: {mesh.volume:.2f}")
+            print(f"      Area: {mesh.area:.2f}")
+            
             return mesh
         except Exception as e:
+            print(f"   ❌ MODEL LOADING ERROR in FeatureExtractor:")
+            print(f"      File: {os.path.abspath(file_path)}")
+            print(f"      Error type: {type(e).__name__}")
+            print(f"      Error message: {str(e)}")
+            import traceback
+            print(f"      Traceback:")
+            traceback.print_exc()
             raise ValueError(f"Failed to load 3D model: {str(e)}")
     
     def extract_features(self, mesh: trimesh.Trimesh) -> Dict[str, Any]:

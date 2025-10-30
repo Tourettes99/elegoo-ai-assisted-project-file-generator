@@ -50,6 +50,14 @@ def analyze_3d_model(model_file, material, use_kb, build_plate_size):
     try:
         # Get the file path
         model_path = model_file.name if hasattr(model_file, 'name') else model_file
+        print(f"\n{'='*70}")
+        print(f"ANALYZING MODEL")
+        print(f"{'='*70}")
+        print(f"Model path: {model_path}")
+        print(f"Material: {material}")
+        print(f"Use KB: {use_kb}")
+        print(f"Build plate size: {build_plate_size}")
+        print(f"{'='*70}\n")
         
         # Analyze the model (always Elegoo Orca Slicer)
         result = agent.analyze_model(
@@ -59,6 +67,7 @@ def analyze_3d_model(model_file, material, use_kb, build_plate_size):
             slicer_type="elegoo_orca",
             build_plate_size=build_plate_size
         )
+        print(f"\n✓ Analysis completed successfully\n")
         
         # Build summary text
         summary_parts = [
@@ -125,6 +134,15 @@ def analyze_3d_model(model_file, material, use_kb, build_plate_size):
         return summary_text, profile_json, three_mf_file, json_config_file, summary_file
         
     except Exception as e:
+        print(f"\n{'='*70}")
+        print(f"❌ ERROR IN ANALYZE_3D_MODEL")
+        print(f"{'='*70}")
+        print(f"Error type: {type(e).__name__}")
+        print(f"Error message: {str(e)}")
+        import traceback
+        print(f"Full traceback:")
+        traceback.print_exc()
+        print(f"{'='*70}\n")
         return f"❌ Error analyzing model: {str(e)}", "", None, None, None
 
 
@@ -367,10 +385,29 @@ if __name__ == "__main__":
             sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
         except:
             pass
+        
+        # Fix Windows asyncio ProactorEventLoop issue with Gradio
+        try:
+            import asyncio
+            import warnings
+            
+            # Suppress the specific ConnectionResetError warning on Windows
+            warnings.filterwarnings('ignore', category=RuntimeWarning, message='coroutine.*was never awaited')
+            
+            # Set the event loop policy to use SelectorEventLoop instead of ProactorEventLoop
+            # This prevents the "ConnectionResetError: [WinError 10054]" issue
+            if sys.version_info >= (3, 8) and sys.platform == 'win32':
+                asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+                print("✓ Windows asyncio event loop configured (using SelectorEventLoop)")
+        except Exception as e:
+            print(f"⚠️  Could not configure asyncio for Windows: {e}")
     
     print("\n" + "="*70)
     print("Starting AI 3D Print Profile Generator")
     print("="*70)
+    print("\n🔍 Enhanced error logging enabled!")
+    print("   All parsing errors will be displayed with detailed information")
+    print("   including file paths, line numbers, and full tracebacks")
     print("\nAccess the web interface at:")
     print("   -> http://localhost:7860")
     print("   -> http://127.0.0.1:7860")
